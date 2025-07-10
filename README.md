@@ -51,31 +51,45 @@ This project showcases the implementation of a high-performance graph database s
 
 ## Sample Analytical Queries
 
-### Co-actor Network Analysis
+
+1. **Movies and Actors (Limited)**:
+```cypher
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN p, r, m LIMIT 25
+```
+![Neo4j Example Query](Images/output/first_query.png)
+
+2. **Directors and Movies (Limited)**:
+```cypher
+MATCH (p:Person)-[r:DIRECTED]->(m:Movie) RETURN p, r, m LIMIT 25
+```
+![Neo4j Example Query](Images/output/second_query.png)
+
+3. **Movie Genres (Limited)**:
+```cypher
+MATCH (m:Movie)-[r:IS_GENRE]->(g:Genre) RETURN m, r, g LIMIT 25
+```
+![Neo4j Example Query](Images/output/third_query.png)
+
+4. **Frequent Co-stars**:
 ```cypher
 MATCH (actor1:Person)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(actor2:Person) 
 WHERE actor1 <> actor2 
-WITH actor1, actor2, COUNT(*) AS collaborations 
-WHERE collaborations >= 3 
-RETURN actor1, actor2, collaborations 
-ORDER BY collaborations DESC LIMIT 25
+WITH actor1, actor2, COUNT(*) AS movies 
+WHERE movies >= 3 
+RETURN actor1, actor2, movies 
+ORDER BY movies DESC LIMIT 25
 ```
+![Neo4j Example Query](Images/output/fourth_query.png)
 
-### Director Productivity Analysis
+5. **Top Directors**:
 ```cypher
 MATCH (director:Person)-[:DIRECTED]->(m:Movie) 
-WITH director, COUNT(m) AS filmCount 
-ORDER BY filmCount DESC LIMIT 10 
+WITH director, COUNT(m) AS movieCount 
+ORDER BY movieCount DESC LIMIT 10 
 MATCH (director)-[:DIRECTED]->(m:Movie) 
-RETURN director, m, filmCount LIMIT 25
+RETURN director, m, movieCount LIMIT 25
 ```
-
-### Genre Distribution Analysis
-```cypher
-MATCH (m:Movie)-[:IS_GENRE]->(g:Genre) 
-RETURN g.name, COUNT(m) AS movieCount 
-ORDER BY movieCount DESC
-```
+![Neo4j Example Query](Images/output/fifth_query.png)
 
 ## Installation and Setup
 

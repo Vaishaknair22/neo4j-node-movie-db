@@ -1,0 +1,48 @@
+//data link - https://drive.google.com/drive/folders/1z57kKRe5vUeVAge5aj6OdKtlByyh6mXt?usp=sharing
+
+
+// Create indexes first to speed up lookups and merges
+CREATE INDEX ON :Movie(id);
+CREATE INDEX ON :Movie(tmdbId);
+CREATE INDEX ON :Genre(name);
+CREATE INDEX ON :User(id);
+CREATE INDEX ON :Person(name);
+
+// First batch: Load movies and create genre relationships
+:auto LOAD CSV WITH HEADERS FROM "file:///movies.csv" AS line
+MERGE (m:Movie{ id:line.movieId, title:line.title})
+WITH m, line
+UNWIND split(line.genres, '|') AS gName
+MERGE (g:Genre {name:gName})
+MERGE (m)-[:IS_GENRE]->(g);
+
+// Second batch: Load ratings in batches
+:auto LOAD CSV WITH HEADERS FROM "file:///ratings.csv" AS line
+MATCH (m:Movie {id:line.movieId})
+MERGE (u:User {id:line.userId})
+CREATE (u)-[:RATED { rating: toFloat(line.rating)}]->(m);
+
+// Third batch: Load tags in batches
+:auto LOAD CSV WITH HEADERS FROM "file:///tags.csv" AS line
+MATCH (m:Movie {id:line.movieId})
+MATCH (u:User {id:line.userId})
+CREATE (u)-[:TAGGED { tag: line.tag}]->(m);
+
+// Fourth batch: Load TMDB IDs
+:auto LOAD CSV WITH HEADERS FROM "file:///links.csv" AS line
+MATCH (m:Movie {id:line.movieId})
+SET m.tmdbId = line.tmdbId;
+
+// Fifth batch: Load directors
+:auto LOAD CSV WITH HEADERS FROM "file:///directors.csv" AS line
+MATCH (m:Movie {tmdbId:line.movieId})
+MERGE (p:Person {name:line.person_name})
+MERGE (p)-[:DIRECTED]->(m);
+
+// Sixth batch: Load actors and roles
+:auto LOAD CSV WITH HEADERS FROM "file:///roles.csv" AS line
+MATCH (m:Movie {tmdbId:line.movieId})
+MERGE (p:Person {name:line.person_name})
+CREATE (p)-[r:ACTED_IN]->(m)
+SET r.role = line.role;
+
